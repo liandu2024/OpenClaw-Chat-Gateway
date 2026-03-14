@@ -8,7 +8,7 @@ Environment=PORT=3115
 Environment=NODE_ENV=production
 Environment=CLAWUI_DATA_DIR=.clawui_release
 WorkingDirectory=/home/ange/Dev/Antigravity/clawui/backend
-ExecStart=/usr/bin/node dist/index.js
+ExecStart={{NODE_PATH}} dist/index.js
 Restart=always
 RestartSec=10
 
