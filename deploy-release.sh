@@ -26,6 +26,14 @@ npm run build
 echo "Patching OpenClaw configuration for local backend connections..."
 node backend/patch-config.js || echo "Warning: Failed to patch OpenClaw config automatically."
 
+NODE_PATH=$(command -v node || true)
+if [ -z "$NODE_PATH" ]; then
+    echo "Error: Could not find node in PATH. Please install Node.js and try again."
+    exit 1
+fi
+
+echo "Using node binary: $NODE_PATH"
+
 echo "Setting up systemd service..."
 mkdir -p "$SERVICE_DIR"
 
@@ -40,8 +48,9 @@ fi
 # Copy and update the consolidated service file
 cp "$PROJECT_ROOT/clawui.service" "$SERVICE_DIR/$SERVICE_NAME.service"
 
-# Update WorkingDirectory, Port, and Description in the service file
+# Update WorkingDirectory, Node path, Port, and Description in the service file
 sed -i "s|WorkingDirectory=.*|WorkingDirectory=$PROJECT_ROOT/backend|" "$SERVICE_DIR/$SERVICE_NAME.service"
+sed -i "s|ExecStart=.*|ExecStart=$NODE_PATH dist/index.js|" "$SERVICE_DIR/$SERVICE_NAME.service"
 sed -i "s/Environment=PORT=.*/Environment=PORT=$CLAWUI_PORT/" "$SERVICE_DIR/$SERVICE_NAME.service"
 sed -i "s/Description=.*/Description=ClawUI Service (Port $CLAWUI_PORT)/" "$SERVICE_DIR/$SERVICE_NAME.service"
 
