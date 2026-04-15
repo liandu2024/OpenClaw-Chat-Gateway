@@ -5,11 +5,23 @@ set -e
 REPO_URL="https://github.com/liandu2024/OpenClaw-Chat-Gateway.git"
 INSTALL_DIR="$HOME/OpenClaw-Chat-Gateway"
 
+# Detect OS
+OS_TYPE="$(uname -s)"
+
 # Terminal Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# Cross-platform get local IP
+get_local_ip() {
+    if [ "$OS_TYPE" = "Darwin" ]; then
+        ipconfig getifaddr en0 2>/dev/null || echo ""
+    else
+        hostname -I 2>/dev/null | awk '{print $1}' || echo ""
+    fi
+}
 
 restore_deploy_lockfiles() {
     git restore -- package-lock.json backend/package-lock.json frontend/package-lock.json 2>/dev/null || true
@@ -55,7 +67,7 @@ chmod +x deploy-release.sh
 ./deploy-release.sh "$1" # Pass single port argument if provided
 
 # Get local IP address
-LOCAL_IP=$(hostname -I | awk '{print $1}')
+LOCAL_IP=$(get_local_ip)
 [ -z "$LOCAL_IP" ] && LOCAL_IP="localhost"
 
 echo -e "\n${GREEN}================================================${NC}"
@@ -67,5 +79,9 @@ echo -e "网络访问:   http://$LOCAL_IP:${1:-3115}"
 echo -e "安装目录:   $INSTALL_DIR"
 echo -e "------------------------------------------------"
 echo -e "${BLUE}提示: 安装 LibreOffice 可以获得更好的文档预览体验。${NC}"
-echo -e "安装指令: ${GREEN}sudo apt update && sudo apt install libreoffice -y${NC}"
+if [ "$OS_TYPE" = "Darwin" ]; then
+    echo -e "安装指令: ${GREEN}brew install --cask libreoffice${NC}"
+else
+    echo -e "安装指令: ${GREEN}sudo apt update && sudo apt install libreoffice -y${NC}"
+fi
 echo -e "------------------------------------------------"
