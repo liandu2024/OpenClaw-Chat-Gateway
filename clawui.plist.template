@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>CLAWUI_LABEL</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>NODE_PATH</string>
+        <string>dist/index.js</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>CLAWUI_WORKDIR/backend</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PORT</key>
+        <string>CLAWUI_PORT</string>
+        <key>NODE_ENV</key>
+        <string>production</string>
+        <key>CLAWUI_DATA_DIR</key>
+        <string>.clawui_release</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/clawui-CLAWUI_PORT.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/clawui-CLAWUI_PORT-err.log</string>
+</dict>
+</plist>

@@ -3,8 +3,9 @@ set -e
 
 # Configuration
 INSTALL_DIR="$HOME/OpenClaw-Chat-Gateway"
-SERVICE_NAME="clawui.service"
-SERVICE_PATH="$HOME/.config/systemd/user/$SERVICE_NAME"
+
+# Detect OS
+OS_TYPE="$(uname -s)"
 
 # Terminal Colors
 RED='\033[0;31m'
@@ -13,18 +14,29 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # 探测安装目录和数据目录
-SERVICE_DIR="$HOME/.config/systemd/user"
 DB_PATH="$HOME/.clawui/clawui.sqlite"
 WORKSPACE_BASE="$HOME/.openclaw"
-SERVICES=$(ls $SERVICE_DIR/clawui-*.service 2>/dev/null || true)
-if [ -f "$SERVICE_DIR/clawui.service" ]; then
-    SERVICES="$SERVICES $SERVICE_DIR/clawui.service"
+
+if [ "$OS_TYPE" = "Darwin" ]; then
+    SERVICE_DIR="$HOME/Library/LaunchAgents"
+    SERVICES=$(ls $SERVICE_DIR/com.clawui-*.plist 2>/dev/null || true)
+else
+    SERVICE_DIR="$HOME/.config/systemd/user"
+    SERVICES=$(ls $SERVICE_DIR/clawui-*.service 2>/dev/null || true)
+    if [ -f "$SERVICE_DIR/clawui.service" ]; then
+        SERVICES="$SERVICES $SERVICE_DIR/clawui.service"
+    fi
 fi
 
 DETECTED_DIRS=""
 for S_PATH in $SERVICES; do
-    W_DIR=$(grep "^WorkingDirectory=" "$S_PATH" | cut -d'=' -f2 | sed 's/ /\\ /g')
-    P_DIR=$(dirname "$W_DIR")
+    if [ "$OS_TYPE" = "Darwin" ]; then
+        W_DIR=$(grep -A1 '<key>WorkingDirectory</key>' "$S_PATH" | tail -1 | sed 's/.*<string>\(.*\)<\/string>.*/\1/' | sed 's|/backend$||')
+    else
+        W_DIR=$(grep "^WorkingDirectory=" "$S_PATH" | cut -d'=' -f2 | sed 's/ /\\ /g')
+        W_DIR=$(dirname "$W_DIR")
+    fi
+    P_DIR="$W_DIR"
     if [ -d "$P_DIR" ]; then
         DETECTED_DIRS="$DETECTED_DIRS $P_DIR"
     fi
@@ -55,11 +67,9 @@ fi
 OPENCLAW_CONFIG="$WORKSPACE_BASE/openclaw.json"
 if [ -f "$OPENCLAW_CONFIG" ]; then
     if command -v jq &>/dev/null; then
-        # 使用 jq 提取所有 workspace 路径
         JSON_WS=$(jq -r '.agents.list[].workspace' "$OPENCLAW_CONFIG" 2>/dev/null || true)
         TARGET_WORKSPACES="$TARGET_WORKSPACES $JSON_WS"
     else
-        # 兜底：使用 grep/sed 提取 workspace 路径内容
         JSON_WS=$(grep '"workspace":' "$OPENCLAW_CONFIG" | sed 's/.*"workspace": "\(.*\)".*/\1/' || true)
         TARGET_WORKSPACES="$TARGET_WORKSPACES $JSON_WS"
     fi
@@ -67,7 +77,6 @@ fi
 
 # 来源 3: 启发式扫描 (查找包含 SOUL.md 的 workspace-* 目录)
 if [ -d "$WORKSPACE_BASE" ]; then
-    # 扫描目录下所有的 workspace- 开头的目录
     H_WS=$(find "$WORKSPACE_BASE" -maxdepth 2 -type f -name "SOUL.md" | xargs -I {} dirname {} | grep "/workspace-" || true)
     TARGET_WORKSPACES="$TARGET_WORKSPACES $H_WS"
 fi
@@ -106,14 +115,22 @@ fi
 
 # 停止并移除服务
 echo -e "\n${BLUE}步骤 1: 正在停止并移除系统服务...${NC}"
-for S_PATH in $SERVICES; do
-    S_FILE=$(basename "$S_PATH")
-    echo "正在停止服务: $S_FILE"
-    systemctl --user stop "$S_FILE" 2>/dev/null || true
-    systemctl --user disable "$S_FILE" 2>/dev/null || true
-    rm "$S_PATH"
-done
-systemctl --user daemon-reload
+if [ "$OS_TYPE" = "Darwin" ]; then
+    for S_PATH in $SERVICES; do
+        echo "正在停止服务: $(basename "$S_PATH")"
+        launchctl unload "$S_PATH" 2>/dev/null || true
+        rm "$S_PATH"
+    done
+else
+    for S_PATH in $SERVICES; do
+        S_FILE=$(basename "$S_PATH")
+        echo "正在停止服务: $S_FILE"
+        systemctl --user stop "$S_FILE" 2>/dev/null || true
+        systemctl --user disable "$S_FILE" 2>/dev/null || true
+        rm "$S_PATH"
+    done
+    systemctl --user daemon-reload
+fi
 
 # 移除数据和日志
 echo -e "\n${BLUE}步骤 2: 正在清理本项目相关的数据和设置...${NC}"
@@ -128,6 +145,10 @@ done
 rm -rf "$HOME/.clawui"
 rm -rf "$HOME/.clawui_release"
 [ -d "$HOME/.clawui_dev" ] && rm -rf "$HOME/.clawui_dev"
+
+# Remove macOS log files
+rm -f /tmp/clawui-*.log /tmp/clawui-*-err.log 2>/dev/null || true
+
 echo "已清理本项目相关的配置和数据库数据。"
 
 # 移除项目文件

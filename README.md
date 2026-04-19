@@ -44,7 +44,7 @@
 
 ### 🚀 快速开始
 > [!IMPORTANT]
-> 本项目须安装在安装了 OpenClaw 的 **Linux 主机**上，且必须是 **原生安装**（非 Docker）。
+> 本项目须安装在安装了 OpenClaw 的主机上，且必须是 **原生安装**（非 Docker）。支持 **Linux** 和 **macOS** 系统。
 
 #### 📥 一键安装
 
@@ -57,6 +57,28 @@ curl -fsSL https://raw.githubusercontent.com/liandu2024/OpenClaw-Chat-Gateway/ma
 ```bash
 curl -fsSL https://raw.githubusercontent.com/liandu2024/OpenClaw-Chat-Gateway/main/install.sh | bash -s 8080
 ```
+
+<details>
+<summary>🍎 macOS 用户注意</summary>
+
+macOS 使用 `launchd` 管理服务（而非 Linux 的 systemd），安装脚本已自动适配。安装完成后可通过以下命令管理服务：
+
+```bash
+# 查看服务状态
+launchctl list | grep clawui
+
+# 查看日志
+cat /tmp/clawui-3115.log
+cat /tmp/clawui-3115-err.log
+
+# 停止服务
+launchctl unload ~/Library/LaunchAgents/com.clawui-3115.plist
+
+# 启动服务
+launchctl load ~/Library/LaunchAgents/com.clawui-3115.plist
+```
+
+</details>
 
 #### 🆙 无损升级
 ```bash
@@ -81,9 +103,16 @@ curl -fsSL https://raw.githubusercontent.com/liandu2024/OpenClaw-Chat-Gateway/ma
 ---
 
 ### 💡 提示：预览增强
-如果您需要预览 Word, PPT, Excel 等文档，请运行以下指令安装 LibreOffice：
+如果您需要预览 Word, PPT, Excel 等文档，请安装 LibreOffice：
+
+**Linux:**
 ```bash
 sudo apt update && sudo apt install libreoffice -y
+```
+
+**macOS:**
+```bash
+brew install --cask libreoffice
 ```
 
 ### 💬 社群与支持
@@ -127,7 +156,7 @@ sudo apt update && sudo apt install libreoffice -y
 
 ### 🚀 Quick Start
 > [!IMPORTANT]
-> This project must be installed on a **Linux host** where OpenClaw is already installed, and it must be a **native installation** (not Docker).
+> This project must be installed on a host where OpenClaw is already installed, and it must be a **native installation** (not Docker). Both **Linux** and **macOS** are supported.
 
 #### 📥 One-Click Installation
 
@@ -140,6 +169,28 @@ curl -fsSL https://raw.githubusercontent.com/liandu2024/OpenClaw-Chat-Gateway/ma
 ```bash
 curl -fsSL https://raw.githubusercontent.com/liandu2024/OpenClaw-Chat-Gateway/main/install.sh | bash -s 8080
 ```
+
+<details>
+<summary>🍎 macOS Notes</summary>
+
+macOS uses `launchd` for service management (instead of Linux's systemd). The install script automatically adapts. After installation, manage the service with:
+
+```bash
+# Check service status
+launchctl list | grep clawui
+
+# View logs
+cat /tmp/clawui-3115.log
+cat /tmp/clawui-3115-err.log
+
+# Stop service
+launchctl unload ~/Library/LaunchAgents/com.clawui-3115.plist
+
+# Start service
+launchctl load ~/Library/LaunchAgents/com.clawui-3115.plist
+```
+
+</details>
 
 #### 🆙 Non-Destructive Upgrade
 ```bash
@@ -164,9 +215,16 @@ Meticulously crafted mobile details, providing not just responsiveness, but imme
 ---
 
 ### 💡 Tip: Enhanced Preview
-If you need to preview documents like Word, PPT, or Excel, please run the following command to install LibreOffice:
+If you need to preview documents like Word, PPT, or Excel, install LibreOffice:
+
+**Linux:**
 ```bash
 sudo apt update && sudo apt install libreoffice -y
+```
+
+**macOS:**
+```bash
+brew install --cask libreoffice
 ```
 
 ### 💬 Community & Support

@@ -5,6 +5,9 @@ set -e
 # If not in a project dir, default to ~/OpenClaw-Chat-Gateway
 INSTALL_DIR="$HOME/OpenClaw-Chat-Gateway"
 
+# Detect OS
+OS_TYPE="$(uname -s)"
+
 emit_phase() {
     echo "::clawui-update-phase::$1"
 }
@@ -23,7 +26,11 @@ else
     exit 1
 fi
 
-SERVICE_DIR="$HOME/.config/systemd/user"
+if [ "$OS_TYPE" = "Darwin" ]; then
+    SERVICE_DIR="$HOME/Library/LaunchAgents"
+else
+    SERVICE_DIR="$HOME/.config/systemd/user"
+fi
 
 echo "================================================"
 echo "   OpenClaw Chat Gateway - 更新脚本"
@@ -32,18 +39,30 @@ echo "================================================"
 # 1. 从服务文件中探测现有端口
 emit_phase "detect-service"
 EXISTING_PORT=""
-SERVICES=$(ls $SERVICE_DIR/clawui-*.service 2>/dev/null | sort -V || true)
 
-if [ -n "$SERVICES" ]; then
-    # 使用找到的第一个服务端口作为默认值
-    FIRST_SERVICE=$(echo "$SERVICES" | head -n 1)
-    EXISTING_PORT=$(basename "$FIRST_SERVICE" | sed 's/clawui-\([0-9]*\)\.service/\1/')
-    echo "检测到正在运行的端口: $EXISTING_PORT"
+if [ "$OS_TYPE" = "Darwin" ]; then
+    # macOS: look for launchd plist files
+    SERVICES=$(ls $SERVICE_DIR/com.clawui-*.plist 2>/dev/null | sort -V || true)
+
+    if [ -n "$SERVICES" ]; then
+        FIRST_SERVICE=$(echo "$SERVICES" | head -n 1)
+        EXISTING_PORT=$(basename "$FIRST_SERVICE" | sed 's/com\.clawui-\([0-9]*\)\.plist/\1/')
+        echo "检测到正在运行的端口: $EXISTING_PORT"
+    fi
 else
-    # 检查旧版服务文件
-    if [ -f "$SERVICE_DIR/clawui.service" ]; then
-        EXISTING_PORT="3115"
-        echo "检测到旧版安装 (端口 3115)"
+    # Linux: look for systemd service files
+    SERVICES=$(ls $SERVICE_DIR/clawui-*.service 2>/dev/null | sort -V || true)
+
+    if [ -n "$SERVICES" ]; then
+        FIRST_SERVICE=$(echo "$SERVICES" | head -n 1)
+        EXISTING_PORT=$(basename "$FIRST_SERVICE" | sed 's/clawui-\([0-9]*\)\.service/\1/')
+        echo "检测到正在运行的端口: $EXISTING_PORT"
+    else
+        # 检查旧版服务文件
+        if [ -f "$SERVICE_DIR/clawui.service" ]; then
+            EXISTING_PORT="3115"
+            echo "检测到旧版安装 (端口 3115)"
+        fi
     fi
 fi
 
